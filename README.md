@@ -124,6 +124,43 @@ npm run seed
 - **View & edit** — Click a row to open detail in the sidebar; edit and save
 - **Validation** — Backend uses Zod; frontend uses the same types
 
+---
+
+## Design decisions & tradeoffs
+
+| Decision | Rationale | Tradeoff |
+|----------|-----------|----------|
+| **SQLite** | No separate DB server; single file, easy to run and seed. Fits an assignment and small/medium datasets. | Not ideal for high concurrency or horizontal scaling; would swap for Postgres in production. |
+| **All API routes in `server.ts`** | Single file keeps the API easy to follow for a small surface area. | With more endpoints, would split into route modules and shared middleware. |
+| **React state only (no Redux/React Query)** | `useState`/`useEffect` and one `loadIncidents()` keep dependencies minimal and behavior explicit. | No built-in cache or deduplication; refetch on every filter/sort/page change. With more time, would use React Query or SWR. |
+| **Zod only on backend** | Request validation and clear 400 responses without pushing Zod into the frontend bundle. | Types are duplicated in `frontend/src/types.ts`; a shared package or codegen would keep them in sync. |
+| **Server-side pagination** | Keeps response size bounded and works with large tables. | More round-trips than infinite scroll; acceptable for an admin-style list. |
+| **Debounced search (400ms)** | Reduces requests while typing and avoids hammering the API. | Slight delay before results update; tunable. |
+| **CORS origin `http://localhost:5173`** | Simple for local dev with Vite’s default port. | Production would need `CORS_ORIGIN` (or similar) from env. |
+| **No delete endpoint** | Scope focused on create, list, filter, sort, and update. | Delete could be added later with soft-delete or hard delete plus UI. |
+
+---
+
+## Improvements with more time
+
+- **Shared types/schemas** — Monorepo or a shared package so frontend and backend use one source of truth (e.g. Zod schemas) and avoid drift.
+- **Server state library** — React Query or SWR for caching, deduplication, optimistic updates, and clearer loading/error states.
+- **Testing** — Unit tests (Vitest/Jest) for validation and API client; E2E (Playwright/Cypress) for critical flows (create, filter, edit).
+- **Config & env** — `VITE_API_URL` and backend `CORS_ORIGIN`/`PORT` from environment for different deployments.
+- **Backend structure** — Route modules (`routes/incidents.ts`), shared validation middleware, and a small service layer for DB access.
+- **UX** — Skeleton loaders, error boundaries, toast notifications for create/update, and clearer empty states.
+- **Accessibility** — ARIA labels, keyboard navigation, and focus management in the table and sidebar.
+- **Delete incident** — `DELETE /api/incidents/:id` plus confirmation in the UI (and optional soft-delete).
+- **Postgres (or similar)** — For production: migrations, connection pooling, and better concurrency than SQLite.
+
+---
+
+## Submitting to the hiring team
+
+Share the **repository link** with the hiring team upon completion so they can clone, run, and review the project.
+
+---
+
 ## License
 
 Private / assignment project.
